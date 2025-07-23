@@ -32,15 +32,10 @@ Focus on architecture and separation of concerns over feature richness
 - Interface-based views (`IBookCatalogView`, `IBookEditorView`)  
 - Abstracted service layer (`IBookService`)  
 - Controllers manage flow between UI and logic  
-- Proper DI setup with scoped dialogs  
+- DI setup with scoped dialog forms via `FormCreatorService`
 - Event-driven communication  
 
 
 ## Running the Project
 
 Clone the repository and open in Visual Studio. The project uses .NET with WinForms and includes sample data.
-
-
-
-
-
