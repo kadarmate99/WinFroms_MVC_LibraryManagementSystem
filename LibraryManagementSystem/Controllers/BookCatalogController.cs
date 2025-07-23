@@ -19,15 +19,15 @@ namespace LibraryManagementSystem.Controllers
         private readonly IBookCatalogView _view;
         private readonly IUserNotificationView _feedback;
         private readonly ILoadingIndicatorView _loading;
-        private readonly IServiceProvider _serviceProvider;
+        private readonly IFormCreatorService _formCreatorService;
 
-        public BookCatalogController(IBookCatalogView view, IUserNotificationView feedback, ILoadingIndicatorView loading, IServiceProvider serviceProvider, IBookService bookService) : base(bookService)
+        public BookCatalogController(IBookCatalogView view, IUserNotificationView feedback, ILoadingIndicatorView loading, IBookService bookService, IFormCreatorService formCreatorService) : base(bookService)
         {
             _view = view ?? throw new ArgumentNullException(nameof(view));
             _feedback = view as IUserNotificationView ?? throw new ArgumentException("View must implement IUserNotificationView");
             _loading = view as ILoadingIndicatorView ?? throw new ArgumentException("View must implement ILoadingIndicatorView");
-
-            _serviceProvider = serviceProvider ?? throw new ArgumentNullException(nameof(serviceProvider));
+            
+            _formCreatorService = formCreatorService ?? throw new ArgumentNullException(nameof(formCreatorService));
 
             // Subscribe to view events
             _view.BookSelected += OnBookSelected;
@@ -97,19 +97,7 @@ namespace LibraryManagementSystem.Controllers
             {
                 _loading.ShowLoading(true);
 
-                // Manualy create a scope for this dialog operation
-                using var scope = _serviceProvider.CreateScope(); // Create the new scope 
-                IServiceProvider scopedServiceProvider = scope.ServiceProvider; // Get the scoped service provider to resolve services within this scope
-
-                // Get services from the scoped provider
-                var editForm = scopedServiceProvider.GetRequiredService<BookEditorForm>(); // Instance created
-                var editController = scopedServiceProvider.GetRequiredService<BookEditorController>(); // Gets same instance
-
-                // Initialize the controller for editing an existing book
-                editController.InitializeForEdit(book);
-
-                // Show the form as a modal dialog
-                var result = editForm.ShowDialog();
+                var result = _formCreatorService.ShowBookEditForm(book);
 
                 // If the user saved the book, refresh the main list
                 if (result == DialogResult.OK)
@@ -127,7 +115,6 @@ namespace LibraryManagementSystem.Controllers
             {
                 _loading.ShowLoading(false);
             }
-            // Scope automatically disposed here - form and controller cleaned up
         }
 
         private void OnSearchRequested(object? sender, string searchTerm)
@@ -137,15 +124,7 @@ namespace LibraryManagementSystem.Controllers
                 _loading.ShowLoading(true);
 
                 // Delegate the search logic to the service layer
-                List<Book> books;
-                if (string.IsNullOrWhiteSpace(searchTerm))
-                {
-                    books = BookService.GetAllBooks();
-                }
-                else
-                {
-                    books = BookService.SearchBooks(searchTerm);
-                }
+                var books = BookService.SearchBooks(searchTerm);
 
                 _view.DisplayBooks(books);
 
@@ -176,21 +155,9 @@ namespace LibraryManagementSystem.Controllers
             {
                 _loading.ShowLoading(true);
 
-                // Manualy create a scope for this dialog operation
-                using var scope = _serviceProvider.CreateScope(); // Create the new scope 
-                IServiceProvider scopedServiceProvider = scope.ServiceProvider; // Get the scoped service provider to resolve services within this scope
+                var result = _formCreatorService.ShowBookAddForm();
 
-                // Get services from the scoped provider
-                var editForm = scopedServiceProvider.GetRequiredService<BookEditorForm>(); // Instance created
-                var editController = scopedServiceProvider.GetRequiredService<BookEditorController>(); // Gets same instance
-
-                // Initialize the controller for adding a new book
-                editController.InitializeForAdd();
-
-                // Show the form as a modal dialog
-                var result = editForm.ShowDialog();
-
-                // If the user saved the book, refresh the main list
+                // If the user saved the book, refresh the catalog list
                 if (result == DialogResult.OK)
                 {
                     LoadBooks();
@@ -206,7 +173,6 @@ namespace LibraryManagementSystem.Controllers
             {
                 _loading.ShowLoading(false);
             }
-            // Scope automatically disposed here - form and controller cleaned up
         }
 
         private void OnRefreshRequested(object? sender, EventArgs e)
@@ -230,7 +196,8 @@ namespace LibraryManagementSystem.Controllers
             catch (Exception ex)
             {
                 HandleError(ex, "loading books");
-                _feedback.ShowError("An error occured while loading books");
+                _feedback.ShowError("An error occurred" +
+                    " while loading books");
             }
             finally
             {

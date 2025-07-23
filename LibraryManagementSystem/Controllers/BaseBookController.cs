@@ -12,7 +12,7 @@ namespace LibraryManagementSystem.Controllers
     /// </summary>
     public abstract class BaseBookController
     {
-        // Shared dependency for a BookService.
+        // Shared dependencies for all Book Controllers
         protected IBookService BookService { get; }
 
         protected BaseBookController(IBookService bookService)
@@ -22,7 +22,7 @@ namespace LibraryManagementSystem.Controllers
 
         protected virtual void HandleError(Exception ex, string action)
         {
-            // Dummy error handle
+            // Dummy error logging
             // In a real app this should be logging
             System.Diagnostics.Debug.WriteLine($"Error during {action}: {ex.Message}");
         }

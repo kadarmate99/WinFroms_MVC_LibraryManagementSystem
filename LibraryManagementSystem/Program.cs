@@ -18,8 +18,10 @@ namespace LibraryManagementSystem
 
             var builder = Host.CreateApplicationBuilder();
 
-            // Core services
+            // Services
             builder.Services.AddSingleton<IBookService, BookService>();
+            builder.Services.AddSingleton<IFormCreatorService, FormCreatorService>();
+
 
             // Main form - singleton since it's the primary window
             builder.Services.AddSingleton<MainBookCatalogForm>();
